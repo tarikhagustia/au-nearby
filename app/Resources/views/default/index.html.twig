@@ -1,0 +1,130 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container">
+      <div class="content">
+        {% if params['city'] is defined %}
+        <h3 class="text-center">Search Nearby Cities with distance {{params['distance']}} km</h3>
+        {% else %}
+        <h3 class="text-center">Search Nearby Cities with weather</h3>
+        {% endif %}
+        <form method="get" action="">
+          <div class="row">
+            <div class="col-sm-3">
+              <div class="form-group">
+                <label class="control-label">Select city</label>
+                <select class="form-control" name="city">
+                  {% for city in cities %}
+                      <option value="{{ city.id }}" {{( (params['city'] is defined and params['city'] == city.id) ? "selected" : null)}}>{{ city.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="form-group">
+                <label class="control-label">Input distance (in KM)</label>
+                <input type="number" class="form-control" name="distance" placeholder="eg. 15" value="{{params['distance'] is defined ? params['distance'] : null}}">
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="form-group">
+                <label class="control-label">&nbsp;</label>
+                <!-- <input type="number" class="form-control" name="distance" placeholder="eg. 15"> -->
+                <div>
+                  <button class="btn btn-primary" type="submit">Find cities</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+        {% if params['city'] is defined %}
+
+
+        <div class="row">
+          <div class="col-sm-12">
+
+            <div id="wsMap" style="height:500px; margin: 0px auto;"></div>
+<br>
+
+            <div class="table-responsive">
+              <table class="table table-striped table-hover table-bordered">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Name</th>
+                    <th>State</th>
+                    <th>Postcode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for near in nearest %}
+                  <tr>
+                    <td class="text-center" width="5%"> {{ loop.index }} </td>
+                    <td>{{near.name}}</td>
+                    <td>{{near.state}}</td>
+                    <td>{{near.postcode}}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .content {
+      padding: 10px;
+      margin-top: 50px;
+      border: 1px solid black;
+    }
+</style>
+{% endblock %}
+{% block javascripts %}
+  {% if params['city'] is defined %}
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfDTwbgh1d1FDEWJwizePMcfOOYBvRW-w&callback=initMap"
+    type="text/javascript"></script>
+  <script type="text/javascript">
+
+  function initMap(){
+      var locations = JSON.parse('{{ json_nearest | raw}}');
+      var latlng = new google.maps.LatLng({{selectedCity.latitude}}, {{selectedCity.longitude}});
+      var map = new google.maps.Map(document.getElementById('wsMap'), {
+        zoom: 9,
+        center: latlng,
+      });
+      var infowindow = new google.maps.InfoWindow();
+      var marker, i;
+
+      console.log(locations.length);
+
+      for (i = 0; i < locations.length; i++) {
+          marker = new google.maps.Marker({
+              position: new google.maps.LatLng(locations[i]['latitude'], locations[i]['longitude']),
+              map: map
+          });
+          google.maps.event.addListener(marker, 'click', (function(marker, i) {
+          return function() {
+              $.getJSON('/get-weather?city_id='+locations[i]['id'], function(res){
+                var info = "Name: " + locations[i]['name'] + "<br>";
+                info += "Postcode: " + locations[i]['postcode'] + "<br>";
+                info += "State: " + locations[i]['state'];
+                info += "<br>Temp: " + res.temp + " celcius";
+                info += "<br>humidity: " + res.humidity;
+                info += "<br>pressure: " + res.pressure;
+                infowindow.setContent(info);
+                infowindow.open(map, marker);
+              })
+          }
+          })(marker, i));
+      }
+  }
+
+  </script>
+  {% endif %}
+{% endblock %}
