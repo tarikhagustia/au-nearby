@@ -13,11 +13,8 @@
             <div class="col-sm-3">
               <div class="form-group">
                 <label class="control-label">Select city</label>
-                <select class="form-control" name="city">
-                  {% for city in cities %}
-                      <option value="{{ city.id }}" {{( (params['city'] is defined and params['city'] == city.id) ? "selected" : null)}}>{{ city.name }}</option>
-                  {% endfor %}
-                </select>
+                <input id="cities" name="city_name" class="form-control" value="{{params['city_name'] is defined ? params['city_name'] : null}}" placeholder="type here eg. Sydney" />
+                <input name="city" id="city_id" type="hidden" value="{{params['city'] is defined ? params['city'] : null}}" />
               </div>
             </div>
             <div class="col-sm-3">
@@ -77,6 +74,7 @@
 {% endblock %}
 
 {% block stylesheets %}
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <style>
     .content {
       padding: 10px;
@@ -86,6 +84,38 @@
 </style>
 {% endblock %}
 {% block javascripts %}
+<script
+  src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+  integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+  crossorigin="anonymous"></script>
+<script>
+  $( function() {
+    $( "#cities" ).autocomplete({
+      source: function(request, response){
+        $.ajax({
+          url: "/get-cities",
+          dataType: "json",
+          data: {
+            q: request.term
+          },
+          success: function( data ) {
+            response( data );
+          }
+        });
+      },
+      minLength: 3,
+      select: function( event, ui ) {
+        $('#city_id').val(ui.item.id)
+      },
+      open: function() {
+        $( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+      },
+      close: function() {
+        $( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+      }
+    });
+  } );
+  </script>
   {% if params['city'] is defined %}
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfDTwbgh1d1FDEWJwizePMcfOOYBvRW-w&callback=initMap"
     type="text/javascript"></script>

@@ -36,7 +36,7 @@ class DefaultController extends Controller
           $distance = $request->get('distance');
                   $sql = "
                   SELECT id, name, latitude, longitude, postcode, state, (3956 * 2 * ASIN(SQRT( POWER(SIN(( $lat - latitude) *  pi()/180 / 2), 2) +COS( $lat * pi()/180) * COS(latitude * pi()/180) * POWER(SIN(( $long - longitude) * pi()/180 / 2), 2) ))) as distance
-                  from au_towns
+                  from postcodes_geo
                   having  distance <= $distance
                   order by distance";
 
@@ -74,7 +74,30 @@ class DefaultController extends Controller
         // return new Response($response);
         return $this->json($data);
       }
+    }
 
+    /**
+     * @Route("/get-cities", name="get_cities")
+     */
+    public function getCitiesAction(Request $request)
+    {
+      $em = $this->getDoctrine()->getManager();
+      $name = strtolower($request->get('q'));
+      $repository = $em->getRepository(City::class);
+      $query = $repository->createQueryBuilder('p')
+               ->where('p.name LIKE LOWER(:word)')
+               ->setParameter('word', '%'.$name.'%')
+               ->getQuery();
+      $cities = $query->getResult();
+      $result = [];
+      foreach ($cities as $key => $city) {
+        $result[] = [
+          'label' => $city->getPostcode() . ' '. $city->getName(),
+          'value' => $city->getPostcode() . ' '. $city->getName(),
+          'id' => $city->getId()
+        ];
+      }
 
+      return $this->json($result);
     }
 }

@@ -4,7 +4,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="au_towns")
+ * @ORM\Table(name="postcodes_geo")
  */
 class City
 {
